@@ -2,11 +2,11 @@ import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 
 const initialState = {
-  name: "sasa",
-  username: "samssmaria",
-  tweet:
-    "só bjo homens mais altos que eu,\ngosto de ver eles se curvando\nperante a mim",
-  timestamp: buildCurrentTimestamp(),
+  name: "",
+  username: "",
+  tweet: "",
+  timestamp: "",
+  profileImageUrl: "",
 };
 
 function buildCurrentTimestamp() {
@@ -86,6 +86,7 @@ function parseTweetDataFromOEmbed(payload) {
     username: importedUsername,
     tweet: tweetText,
     timestamp: importedDate,
+    profileImageUrl: buildAvatarUrl(importedUsername),
   };
 }
 
@@ -108,8 +109,7 @@ function normalizeHandle(username) {
 function buildDisplayName(name, username) {
   const cleanName = name.trim();
   const cleanUsername = username.replace(/^@+/, "").trim();
-  const fallback = cleanName || cleanUsername;
-  return fallback || "Seu nome";
+  return cleanName || cleanUsername;
 }
 
 function buildInitials(name, username) {
@@ -118,6 +118,10 @@ function buildInitials(name, username) {
 
 function buildAvatarUrl(username) {
   const handle = normalizeHandle(username);
+  if (!username.trim() || handle === "username") {
+    return "";
+  }
+
   return `https://unavatar.io/x/${handle}`;
 }
 
@@ -198,9 +202,13 @@ export default function App() {
 
   const handle = normalizeHandle(form.username);
   const displayName = buildDisplayName(form.name, form.username);
-  const avatarInitial = buildInitials(form.name, form.username);
-  const avatarUrl = buildAvatarUrl(form.username);
+  const avatarInitial = buildInitials(form.name, form.username) || "?";
+  const avatarUrl = form.profileImageUrl || buildAvatarUrl(form.username);
   const tweetLength = form.tweet.trim().length;
+  const hasName = Boolean(displayName);
+  const hasHandle = Boolean(form.username.trim());
+  const hasTweet = Boolean(form.tweet.trim());
+  const hasTimestamp = Boolean(form.timestamp.trim());
 
   let densityClass = "tweet-copy--large";
 
@@ -234,10 +242,22 @@ export default function App() {
 
   function updateField(field) {
     return (event) => {
-      setForm((current) => ({
-        ...current,
-        [field]: event.target.value,
-      }));
+      const { value } = event.target;
+
+      setForm((current) => {
+        if (field === "username") {
+          return {
+            ...current,
+            username: value,
+            profileImageUrl: buildAvatarUrl(value),
+          };
+        }
+
+        return {
+          ...current,
+          [field]: value,
+        };
+      });
 
       if (field === "username") {
         setAvatarFailed(false);
@@ -360,7 +380,7 @@ export default function App() {
           <div className="meta-row">
             <div className="meta-chip">
               <strong>@{handle}</strong>
-              <span>avatar tenta usar a foto pública do perfil</span>
+              <span>avatar é preenchido junto com a importação</span>
             </div>
 
             <button
@@ -381,7 +401,7 @@ export default function App() {
             <article className="tweet-card">
               <header className="tweet-header">
                 <div className="avatar-shell">
-                  {!avatarFailed ? (
+                  {avatarUrl && !avatarFailed ? (
                     <img
                       key={avatarUrl}
                       className="avatar-image"
@@ -392,16 +412,24 @@ export default function App() {
                       onError={() => setAvatarFailed(true)}
                     />
                   ) : null}
-                  <div className={`avatar-fallback${avatarFailed ? " visible" : ""}`}>
+                  <div
+                    className={`avatar-fallback${
+                      avatarFailed || !avatarUrl ? " visible" : ""
+                    }`}
+                  >
                     {avatarInitial}
                   </div>
                 </div>
 
                 <div className="author-block">
                   <div className="author-primary-row">
-                    <p className="display-name">{displayName}</p>
+                    <p className={`display-name${hasName ? "" : " is-placeholder"}`}>
+                      {displayName || "Nome"}
+                    </p>
                   </div>
-                  <p className="handle">@{handle}</p>
+                  <p className={`handle${hasHandle ? "" : " is-placeholder"}`}>
+                    @{hasHandle ? handle : "username"}
+                  </p>
                 </div>
 
                 <div className="tweet-header-actions">
@@ -410,12 +438,16 @@ export default function App() {
                 </div>
               </header>
 
-              <p className={`tweet-copy ${densityClass}`}>
-                {form.tweet || "Seu tweet aparece aqui."}
+              <p
+                className={`tweet-copy ${densityClass}${
+                  hasTweet ? "" : " tweet-copy--placeholder"
+                }`}
+              >
+                {hasTweet ? form.tweet : "Cole um link ou escreva o tweet"}
               </p>
 
-              <p className="tweet-timestamp">
-                {form.timestamp || buildCurrentTimestamp()}
+              <p className={`tweet-timestamp${hasTimestamp ? "" : " is-placeholder"}`}>
+                {hasTimestamp ? form.timestamp : "Data e hora"}
               </p>
 
               <div className="tweet-divider" />
