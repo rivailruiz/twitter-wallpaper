@@ -3,9 +3,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 
-const goatcounterUrl = import.meta.env.VITE_GOATCOUNTER_URL?.trim();
+const goatcounterUrl = "https://rivailruiz.goatcounter.com/count";
 
-if (import.meta.env.PROD && goatcounterUrl) {
+if (import.meta.env.PROD) {
   const existingScript = document.querySelector("script[data-goatcounter]");
 
   if (!existingScript) {
