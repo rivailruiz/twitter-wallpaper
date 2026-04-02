@@ -34,6 +34,8 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_GOATCOUNTER_URL: ${{ vars.VITE_GOATCOUNTER_URL }}
         run: npm run build
 
       - name: Upload artifact
