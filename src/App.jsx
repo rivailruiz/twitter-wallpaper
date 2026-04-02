@@ -3,10 +3,26 @@ import { toPng } from "html-to-image";
 
 const initialState = {
   name: "sasa",
-  username: "sasa",
+  username: "samssmaria",
   tweet:
     "só bjo homens mais altos que eu,\ngosto de ver eles se curvando\nperante a mim",
+  timestamp: buildCurrentTimestamp(),
 };
+
+function buildCurrentTimestamp() {
+  const now = new Date();
+  const time = new Intl.DateTimeFormat("pt-BR", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(now);
+  const date = new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(now);
+
+  return `${time} · ${date}`;
+}
 
 function extractTweetUrl(value) {
   const match = value.match(
@@ -58,15 +74,18 @@ function parseTweetDataFromOEmbed(payload) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(payload.html ?? "", "text/html");
   const paragraph = doc.querySelector("p");
+  const footerLink = doc.querySelector("a:last-of-type");
   const tweetText = paragraph?.textContent?.trim() ?? "";
   const authorUrl = payload.author_url ?? "";
   const usernameMatch = authorUrl.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/i);
   const importedUsername = usernameMatch?.[1] ?? "";
+  const importedDate = footerLink?.textContent?.trim() ?? buildCurrentTimestamp();
 
   return {
     name: payload.author_name ?? "",
     username: importedUsername,
     tweet: tweetText,
+    timestamp: importedDate,
   };
 }
 
@@ -94,8 +113,78 @@ function buildDisplayName(name, username) {
 }
 
 function buildInitials(name, username) {
-  const cleanName = buildDisplayName(name, username);
-  return cleanName.slice(0, 1).toUpperCase();
+  return buildDisplayName(name, username).slice(0, 1).toUpperCase();
+}
+
+function buildAvatarUrl(username) {
+  const handle = normalizeHandle(username);
+  return `https://unavatar.io/x/${handle}`;
+}
+
+function XLogo() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="brand-mark">
+      <path
+        fill="currentColor"
+        d="M18.244 2H21l-6.76 7.728L22 22h-6.172l-4.835-6.938L4.92 22H2.16l7.23-8.27L2 2h6.328l4.37 6.274L18.244 2Zm-2.158 18h1.528L7.498 3.896H5.86Z"
+      />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="tweet-menu-icon">
+      <path
+        fill="currentColor"
+        d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2Zm7 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2Zm7 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2Z"
+      />
+    </svg>
+  );
+}
+
+function ReplyIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path
+        fill="currentColor"
+        d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.42 0 8.005 3.58 8.005 8s-3.584 8-8.005 8H9.756a7.97 7.97 0 0 1-3.248-.687l-3.75 1.427a.75.75 0 0 1-.98-.94l1.07-3.48A7.96 7.96 0 0 1 1.75 10Zm8.005-6.5A6.5 6.5 0 0 0 4.91 14.31a.75.75 0 0 1 .13.664l-.657 2.135 2.296-.873a.75.75 0 0 1 .603.024 6.47 6.47 0 0 0 2.474.49h4.366a6.5 6.5 0 1 0 0-13Z"
+      />
+    </svg>
+  );
+}
+
+function RetweetIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path
+        fill="currentColor"
+        d="m4.5 3.75 4 4-1.06 1.06-2.19-2.19V16a2.75 2.75 0 0 0 2.75 2.75h7.19l-2.19-2.19 1.06-1.06 4 4-4 4-1.06-1.06 2.19-2.19H8A4.25 4.25 0 0 1 3.75 16V6.62L1.56 8.81.5 7.75l4-4Zm11.5.5A4.25 4.25 0 0 1 20.25 8v9.38l2.19-2.19 1.06 1.06-4 4-4-4 1.06-1.06 2.19 2.19V8A2.75 2.75 0 0 0 16 5.25H8.81L11 7.44l-1.06 1.06-4-4 4-4L11 1.56 8.81 3.75H16Z"
+      />
+    </svg>
+  );
+}
+
+function LikeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path
+        fill="currentColor"
+        d="M16.697 3.074c-1.723 0-3.191.81-4.196 2.09-1.004-1.28-2.473-2.09-4.196-2.09C4.742 3.074 2 5.932 2 9.377c0 1.943.767 3.72 2.146 5.423 1.303 1.61 3.195 3.2 5.363 5.021l2.52 2.116a.75.75 0 0 0 .965 0l2.52-2.116c2.168-1.82 4.06-3.41 5.363-5.021C21.233 13.097 22 11.32 22 9.377c0-3.445-2.742-6.303-5.303-6.303Zm0 1.5c1.63 0 3.803 1.945 3.803 4.803 0 1.503-.589 2.946-1.808 4.451-1.211 1.495-3.013 3.012-5.104 4.768L12.5 19.51l-1.088-.914c-2.091-1.756-3.893-3.273-5.104-4.768C5.089 12.323 4.5 10.88 4.5 9.377c0-2.858 2.173-4.803 3.803-4.803 1.52 0 2.857 1.003 3.554 2.54a.75.75 0 0 0 1.366 0c.697-1.537 2.034-2.54 3.474-2.54Z"
+      />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path
+        fill="currentColor"
+        d="M17.53 2.47a.75.75 0 0 1 1.06 0l3.94 3.94a.75.75 0 0 1 0 1.06l-3.94 3.94-1.06-1.06 2.66-2.66h-6.44A9.25 9.25 0 0 0 4.5 16.94v2.31h-1.5v-2.31a10.75 10.75 0 0 1 10.75-10.75h6.44l-2.66-2.66 1.06-1.06ZM7 10.75h1.5v6.5A2.25 2.25 0 0 0 10.75 19.5h8.5A2.25 2.25 0 0 0 21.5 17.25v-6.5H23v6.5A3.75 3.75 0 0 1 19.25 21h-8.5A3.75 3.75 0 0 1 7 17.25v-6.5Z"
+      />
+    </svg>
+  );
 }
 
 export default function App() {
@@ -104,18 +193,20 @@ export default function App() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState("");
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const wallpaperRef = useRef(null);
 
   const handle = normalizeHandle(form.username);
   const displayName = buildDisplayName(form.name, form.username);
   const avatarInitial = buildInitials(form.name, form.username);
+  const avatarUrl = buildAvatarUrl(form.username);
   const tweetLength = form.tweet.trim().length;
 
   let densityClass = "tweet-copy--large";
 
-  if (tweetLength > 180) {
+  if (tweetLength > 210) {
     densityClass = "tweet-copy--compact";
-  } else if (tweetLength > 110) {
+  } else if (tweetLength > 130) {
     densityClass = "tweet-copy--medium";
   }
 
@@ -147,6 +238,10 @@ export default function App() {
         ...current,
         [field]: event.target.value,
       }));
+
+      if (field === "username") {
+        setAvatarFailed(false);
+      }
     };
   }
 
@@ -169,11 +264,8 @@ export default function App() {
         throw new Error("Nao foi possivel interpretar esse tweet.");
       }
 
-      setForm({
-        name: importedData.name,
-        username: importedData.username,
-        tweet: importedData.tweet,
-      });
+      setAvatarFailed(false);
+      setForm(importedData);
       setTweetUrl(validUrl);
     } catch (error) {
       setImportError(
@@ -191,10 +283,10 @@ export default function App() {
       <section className="editor-panel">
         <div className="panel-copy">
           <p className="eyebrow">Tweet Wallpaper Generator</p>
-          <h1>Transforme um texto em wallpaper com estética de tweet.</h1>
+          <h1>Wallpaper com a mesma leitura visual de um tweet real.</h1>
           <p className="panel-description">
-            Digite o username e o tweet. O preview atualiza na hora e o
-            download sai em formato vertical para celular.
+            O cartão agora fica centralizado na tela, com borda, espaçamento e
+            hierarquia visual inspirados no layout do X/Twitter.
           </p>
         </div>
 
@@ -218,9 +310,11 @@ export default function App() {
               </button>
             </div>
             <small className="field-help">
-              Cola o link e o app tenta preencher nome e texto automaticamente.
+              O link preenche nome, @handle, texto e data visível do embed.
             </small>
-            {importError ? <small className="field-error">{importError}</small> : null}
+            {importError ? (
+              <small className="field-error">{importError}</small>
+            ) : null}
           </label>
 
           <label className="field">
@@ -237,7 +331,7 @@ export default function App() {
             <span>Username</span>
             <input
               type="text"
-              placeholder="@sasa"
+              placeholder="@samssmaria"
               value={form.username}
               onChange={updateField("username")}
             />
@@ -253,10 +347,20 @@ export default function App() {
             />
           </label>
 
+          <label className="field">
+            <span>Data / hora exibida</span>
+            <input
+              type="text"
+              placeholder="20:12 · 2 de abr. de 2026"
+              value={form.timestamp}
+              onChange={updateField("timestamp")}
+            />
+          </label>
+
           <div className="meta-row">
             <div className="meta-chip">
               <strong>@{handle}</strong>
-              <span>handle gerado automaticamente</span>
+              <span>avatar tenta usar a foto pública do perfil</span>
             </div>
 
             <button
@@ -274,18 +378,63 @@ export default function App() {
       <section className="preview-panel">
         <div className="phone-frame">
           <div className="wallpaper" ref={wallpaperRef}>
-            <div className="tweet-header">
-              <div className="avatar">{avatarInitial}</div>
+            <article className="tweet-card">
+              <header className="tweet-header">
+                <div className="avatar-shell">
+                  {!avatarFailed ? (
+                    <img
+                      key={avatarUrl}
+                      className="avatar-image"
+                      src={avatarUrl}
+                      alt=""
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarFailed(true)}
+                    />
+                  ) : null}
+                  <div className={`avatar-fallback${avatarFailed ? " visible" : ""}`}>
+                    {avatarInitial}
+                  </div>
+                </div>
 
-              <div className="author-block">
-                <p className="display-name">{displayName}</p>
-                <p className="handle">@{handle}</p>
-              </div>
-            </div>
+                <div className="author-block">
+                  <div className="author-primary-row">
+                    <p className="display-name">{displayName}</p>
+                  </div>
+                  <p className="handle">@{handle}</p>
+                </div>
 
-            <p className={`tweet-copy ${densityClass}`}>
-              {form.tweet || "Seu tweet aparece aqui."}
-            </p>
+                <div className="tweet-header-actions">
+                  <XLogo />
+                  <MoreIcon />
+                </div>
+              </header>
+
+              <p className={`tweet-copy ${densityClass}`}>
+                {form.tweet || "Seu tweet aparece aqui."}
+              </p>
+
+              <p className="tweet-timestamp">
+                {form.timestamp || buildCurrentTimestamp()}
+              </p>
+
+              <div className="tweet-divider" />
+
+              <footer className="tweet-actions" aria-hidden="true">
+                <span className="tweet-action">
+                  <ReplyIcon />
+                </span>
+                <span className="tweet-action">
+                  <RetweetIcon />
+                </span>
+                <span className="tweet-action">
+                  <LikeIcon />
+                </span>
+                <span className="tweet-action">
+                  <ShareIcon />
+                </span>
+              </footer>
+            </article>
           </div>
         </div>
       </section>
